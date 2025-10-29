@@ -1,0 +1,32 @@
+name: autofix.ci
+
+# in case of cant autofix .github folder error.
+# run pnpm exec prettier --write .github manually.
+on:
+    workflow_dispatch:
+    pull_request:
+    push:
+        branches: ['main', 'development']
+permissions:
+    contents: read
+
+jobs:
+    prettier:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - uses: pnpm/action-setup@v4
+              name: Install pnpm
+
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+                  cache: 'pnpm'
+            - run: |
+                  pnpm i
+                  pnpm exec prettier . --write
+
+            - uses: autofix-ci/action@551dded8c6cc8a1054039c8bc0b8b48c51dfc6ef
+              with:
+                  commit-message: 'Apply Prettier format'

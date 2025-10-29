@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "ExternalIdentity" ADD COLUMN     "lastUpdated" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;

@@ -1,0 +1,144 @@
+name: 'Continuous Integration'
+
+on:
+    push:
+        branches: [main, development]
+    pull_request:
+        branches: [main, development]
+
+jobs:
+    install:
+        name: Install
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
+
+            - name: Install Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+
+            - name: Cache node_modules
+              uses: actions/cache@v4
+              with:
+                  path: node_modules
+                  key: ${{ runner.os }}-node_modules-${{ hashFiles('pnpm-lock.yaml') }}
+                  restore-keys: |
+                      ${{ runner.os }}-node_modules-
+
+            - name: Install dependencies
+              run: pnpm install
+
+    build:
+        name: Build
+        runs-on: ubuntu-latest
+        needs: install
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
+
+            - name: Install Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+
+            - name: Restore node_modules cache
+              uses: actions/cache@v4
+              with:
+                  path: node_modules
+                  key: ${{ runner.os }}-node_modules-${{ hashFiles('pnpm-lock.yaml') }}
+                  restore-keys: |
+                      ${{ runner.os }}-node_modules-
+
+            - name: Build the project
+              run: pnpm build
+
+    test:
+        name: Test
+        runs-on: ubuntu-latest
+        needs: build
+
+        services:
+            postgres:
+                image: postgres:latest
+                ports:
+                    - 5432:5432
+                env:
+                    POSTGRES_DB: test
+                    POSTGRES_USER: test
+                    POSTGRES_PASSWORD: test
+                options: >-
+                    --health-cmd "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"
+                    --health-interval 10s
+                    --health-timeout 5s
+                    --health-retries 5
+
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Install pnpm
+              uses: pnpm/action-setup@v4
+
+            - name: Install Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 20
+
+            - name: Restore node_modules cache
+              uses: actions/cache@v4
+              with:
+                  path: node_modules
+                  key: ${{ runner.os }}-node_modules-${{ hashFiles('pnpm-lock.yaml') }}
+                  restore-keys: |
+                      ${{ runner.os }}-node_modules-
+
+            - name: Set up Prisma
+              run: npx prisma generate
+
+            - name: Run migrations
+              env:
+                  DATABASE_URL: postgres://test:test@localhost:5432/test
+              run: npx prisma migrate deploy
+
+            - name: Run Unit Tests
+              run: |
+                  pnpm test -- --coverage | tee jest-output.txt
+                  COVERAGE=$(grep '^All files' jest-output.txt | awk '{print $4}')
+                  if [ -z "$COVERAGE" ]; then
+                    echo "No coverage data found. Defaulting to 0%."
+                    COVERAGE=0
+                  fi
+                  echo "COVERAGE=$COVERAGE" >> $GITHUB_ENV
+                  echo "Code coverage is: $COVERAGE%"
+
+            - name: Check Coverage Threshold
+              run: |
+                  if (( $(echo "$COVERAGE < 80" | bc -l) )); then
+                    echo "Code coverage is below 80%: $COVERAGE%"
+                    exit 1
+                  else
+                    echo "Code coverage is sufficient: $COVERAGE%"
+                  fi
+
+    lint:
+        name: Lint
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Check out repository
+              uses: actions/checkout@v4
+
+            - name: Run Prettier
+              uses: creyD/prettier_action@v4.3
+              with:
+                  prettier_options: --check .

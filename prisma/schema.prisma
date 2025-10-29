@@ -1,0 +1,276 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql" // Change the provider if using a different database
+  url      = env("DATABASE_URL")
+}
+
+enum IntegrationType {
+  MS_TODO
+  VIEW_SOURCE
+  BRIGHTSPACE
+  CANVAS
+  PSCS
+}
+
+enum SystemType {
+  IDP
+  LDAP
+  SIS
+  LMS
+}
+
+enum ActionType {
+  OpenUrl
+}
+
+model UserPreference {
+  id              String          @id @default(uuid())
+  userId          String        @unique
+  user            User            @relation(fields: [userId], references: [id])
+  language        String          @db.VarChar(128)
+  timezone        String          @db.VarChar(128)
+  pushNotification Boolean        @default(true)
+  //  integrations    Integration[]   @relation("UserPreferenceIntegrations")
+}
+
+model User {
+  id                String            @id @default(uuid())
+  isActive          Boolean           @default(true)
+  userPreference    UserPreference?   @relation()
+  externalIdentity  ExternalIdentity[] @relation("UserExternalIdentities")
+  termsAgreedAt     DateTime?
+  privacyAgreedAt   DateTime?
+  
+  instituteId String
+  institute Institute @relation("InstituteStudents", fields: [instituteId], references: [id], onDelete: Cascade)
+}
+
+model Institute {
+  id String @id @default(uuid())
+  name String @db.VarChar(128)
+
+  students User[] @relation("InstituteStudents")
+  externalSystemConfigurations ExternalSystemConfiguration[] @relation("InstituteExternalSystemConfigurations")
+}
+
+model EventSubscription {
+  id String @id @default(uuid())
+  enabled Boolean @default(true)
+  notificationHash String? @db.VarChar(128)
+  lastUpdated DateTime? @default(now())
+
+  eventMappingId String
+  eventMapping EventMapping @relation("EventMappingSubscriptions", fields: [eventMappingId], references: [id], onDelete: Cascade)
+
+  externalIdentityId String
+  externalIdentity ExternalIdentity @relation("ExternalIdentitySubscriptions", fields: [externalIdentityId], references: [id], onDelete: Cascade)
+}
+
+model EventMapping {
+  id String @id @default(uuid())
+  name String @db.VarChar(128)
+  summary String @db.VarChar(1028)
+  description String? @db.VarChar(1028)
+  isTrigger Boolean @default(true)
+  isEnabled Boolean @default(true)
+  isDefaultEnabled Boolean @default(true)
+
+  subscriptions EventSubscription[] @relation("EventMappingSubscriptions")
+
+  externalSystemConfigurationId String
+  externalSystemConfiguration ExternalSystemConfiguration @relation("ExternalSystemConfigurationEventMappings", fields: [externalSystemConfigurationId], references: [id], onDelete: Cascade)
+
+  externalSystemResponseId String
+  externalSystemResponse ExternalSystemResponse @relation("ExternalSystemResponseEventMappings", fields: [externalSystemResponseId], references: [id], onDelete: Cascade)
+}
+
+model ExternalIdentity {
+  id           String     @id @default(uuid())
+  externalId        String?     @db.VarChar(128)
+  lastUpdated     DateTime @default(now())
+  enabled Boolean @default(false)
+
+  userId       String
+  user         User       @relation("UserExternalIdentities", fields: [userId], references: [id], onDelete: Cascade)
+
+  externalSystemConfigurationId String
+  externalSystemConfiguration ExternalSystemConfiguration @relation("DataAdapterExternalIdentities", fields: [externalSystemConfigurationId], references: [id], onDelete: Cascade)
+
+  subscriptions EventSubscription[] @relation("ExternalIdentitySubscriptions")
+
+  token ExternalIdentityToken?
+}
+
+model ExternalIdentityToken {
+  id           String     @id @default(uuid())
+  token        String?     @db.VarChar(8192)
+
+  generatedDate     DateTime @default(now())
+  updatedDate     DateTime @default(now())
+  expiryDate     DateTime @default(now())
+  refreshExpiryDate     DateTime? @default(now())
+
+  externalIdentityId       String @unique
+  externalIdentity         ExternalIdentity       @relation(fields: [externalIdentityId], references: [id], onDelete: Cascade)
+
+  //externalSystemConfigurationId       String
+  //externalSystemConfiguration         ExternalSystemConfiguration       @relation("DataAdapterTokens", fields: [externalSystemConfigurationId], references: [id], onDelete: Cascade)
+}
+
+model ExternalSystem {
+  id String @id @default(uuid())
+  name String @db.VarChar(128)
+  description String? @db.VarChar(4096)
+  minimumVersion String @db.VarChar(24)
+
+  // TODO: Implement these properties, and rename minimumVersion
+  //version      String     @default("1.0") @db.VarChar(128)
+  //systemType   SystemType
+  //environment  String     @default("production") @db.VarChar(128)
+
+  externalSystemConfigurations ExternalSystemConfiguration[] @relation("ExternalSystemConfigurations")
+  externalSystemResponses ExternalSystemResponse[] @relation("ExternalSystemResponses")
+  externalSystemRequests ExternalSystemRequest[] @relation("ExternalSystemRequests")
+}
+
+model ExternalSystemConfiguration {
+  id              String          @id @default(uuid())
+  notificationsEnabled         Boolean         @default(true)
+  requestsEnabled Boolean @default(true)
+  domain String @db.VarChar(128)
+  setupTimestamp  DateTime
+  lastUpdated     DateTime
+
+  instituteId String
+  institute Institute @relation("InstituteExternalSystemConfigurations", fields: [instituteId], references: [id], onDelete: Cascade)
+
+  externalSystemId String
+  externalSystem ExternalSystem @relation("ExternalSystemConfigurations", fields: [externalSystemId], references: [id], onDelete: Cascade)
+
+  eventMappings EventMapping[] @relation("ExternalSystemConfigurationEventMappings")
+  externalIdentities ExternalIdentity[] @relation("DataAdapterExternalIdentities")
+  //tokens ExternalIdentityToken[] @relation("DataAdapterTokens")
+}
+
+model ExternalSystemResponse {
+  id String @id @default(uuid())
+  internalName String @db.VarChar(128)
+  displayName String @db.VarChar(128)
+  description String? @db.VarChar(1028)
+
+  externalSystemId String
+  externalSystem ExternalSystem @relation("ExternalSystemResponses", fields: [externalSystemId], references: [id], onDelete: Cascade)
+
+  responseVariables ExternalSystemResponseVariable[] @relation("ExternalSystemResponseVariables")
+  eventMappings EventMapping[] @relation("ExternalSystemResponseEventMappings")
+}
+
+model ExternalSystemResponseVariable {
+  id String @id @default(uuid())
+  internalName String @db.VarChar(128)
+  displayName String @db.VarChar(128)
+  description String? @db.VarChar(1028)
+
+  externalSystemResponseId String
+  externalSystemResponse ExternalSystemResponse @relation("ExternalSystemResponseVariables", fields: [externalSystemResponseId], references: [id], onDelete: Cascade)
+
+  translation ExternalSystemResponseTranslationMapping?
+}
+
+model ExternalSystemRequest {
+  id String @id @default(uuid())
+  internalName String @db.VarChar(128)
+  displayName String @db.VarChar(128)
+
+  externalSystemId String
+  externalSystem ExternalSystem @relation("ExternalSystemRequests", fields: [externalSystemId], references: [id], onDelete: Cascade)
+
+  requestVariables ExternalSystemRequestVariable[] @relation("ExternalSystemRequestVariables")
+}
+
+model ExternalSystemRequestVariable {
+  id String @id @default(uuid())
+  internalName String @db.VarChar(128)
+  displayName String @db.VarChar(128)
+
+  externalSystemRequestId String
+  externalSystemRequest ExternalSystemRequest @relation("ExternalSystemRequestVariables", fields: [externalSystemRequestId], references: [id], onDelete: Cascade)
+
+  translation ExternalSystemRequestTranslationMapping?
+}
+
+model ExternalSystemResponseTranslationMapping {
+  id String @id @default(uuid())
+
+  externalSystemResponseVariableId String @unique
+  externalSystemResponseVariable ExternalSystemResponseVariable @relation(fields: [externalSystemResponseVariableId], references: [id], onDelete: Cascade)
+
+  responseVariableId String @unique
+  responseVariable ResponseVariable @relation(fields: [responseVariableId], references: [id], onDelete: Cascade)
+}
+
+model ExternalSystemRequestTranslationMapping {
+  id String @id @default(uuid())
+
+  externalSystemRequestVariableId String @unique
+  externalSystemRequestVariable ExternalSystemRequestVariable @relation(fields: [externalSystemRequestVariableId], references: [id], onDelete: Cascade)
+
+  requestVariableId String @unique
+  requestVariable RequestVariable @relation(fields: [requestVariableId], references: [id], onDelete: Cascade)
+}
+
+model Response {
+  id String @id @default(uuid())
+  internalName String @db.VarChar(128)
+  displayName String @db.VarChar(128)
+  description String? @db.VarChar(1028)
+
+  responseVariables ResponseVariable[] @relation("ResponseVariables")
+}
+
+model ResponseVariable {
+  id String @id @default(uuid())
+  internalName String @db.VarChar(128)
+  displayName String @db.VarChar(128)
+
+  responseId String
+  response Response @relation("ResponseVariables", fields: [responseId], references: [id], onDelete: Cascade)
+
+  translation ExternalSystemResponseTranslationMapping?
+}
+
+model Request {
+  id String @id @default(uuid())
+  internalName String @db.VarChar(128)
+  displayName String @db.VarChar(128)
+  description String? @db.VarChar(1028)
+
+  requestVariables RequestVariable[] @relation("RequestVariables")
+}
+
+model RequestVariable {
+  id String @id @default(uuid())
+  internalName String @db.VarChar(128)
+  displayName String @db.VarChar(128)
+
+  requestId String
+  request Request @relation("RequestVariables", fields: [requestId], references: [id], onDelete: Cascade)
+
+  translation ExternalSystemRequestTranslationMapping?
+}
+
+model Config {
+  key   String @id @db.VarChar(128)
+  value String @db.VarChar(128)
+  type  String? @db.VarChar(128)
+}
