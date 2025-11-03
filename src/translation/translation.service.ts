@@ -21,6 +21,18 @@ function translate(
             return translateSubmissionReminder(user.id, body)
         case 'canvas_submission_comment':
             return translateSubmissionComment(user.id, body)
+        case 'brightspace_announcement':
+            return translateBrightspaceAnnouncement(user.id, body)
+        case 'brightspace_grade':
+            return translateBrightspaceGrade(user.id, body)
+        case 'blackboard_announcement':
+            return translateBlackboardAnnouncement(user.id, body)
+        case 'blackboard_grade':
+            return translateBlackboardGrade(user.id, body)
+        case 'campus_solutions_schedule':
+            return translateCampusSolutionsSchedule(user.id, body)
+        case 'campus_solutions_grade':
+            return translateCampusSolutionsGrade(user.id, body)
         default:
             return null
     }
@@ -178,6 +190,83 @@ function translateWelcome(userId: string): NotificationDto {
             welcome_image_url: 'https://i.imgur.com/VkScWm0.png',
         })
     )
+}
+
+function translateBrightspaceAnnouncement(
+    userId: string,
+    body: any
+): NotificationDto {
+    const eventId = 3
+    return new NotificationDto(userId, eventId, null, {
+        announcement_title: body.title ?? '',
+        announcement_message: body.message ?? '',
+        course_id: body.courseId ?? null,
+        published_at: body.publishedAt ?? null,
+    })
+}
+
+function translateBrightspaceGrade(
+    userId: string,
+    body: any
+): NotificationDto {
+    const eventId = 1
+    return new NotificationDto(userId, eventId, null, {
+        assignment_name: body.assignmentName ?? '',
+        grade: body.grade ?? null,
+        assessor_feedback: body.assessor ?? null,
+        course_id: body.courseId ?? null,
+    })
+}
+
+function translateBlackboardAnnouncement(
+    userId: string,
+    body: any
+): NotificationDto {
+    const eventId = 3
+    return new NotificationDto(userId, eventId, null, {
+        announcement_title: body.title ?? '',
+        announcement_message: body.message ?? '',
+        course_id: body.courseId ?? null,
+        published_at: body.publishedAt ?? null,
+    })
+}
+
+function translateBlackboardGrade(
+    userId: string,
+    body: any
+): NotificationDto {
+    const eventId = 1
+    return new NotificationDto(userId, eventId, null, {
+        assignment_name: body.assignmentName ?? '',
+        grade: body.grade ?? null,
+        assessor_feedback: body.assessor ?? null,
+        course_id: body.courseId ?? null,
+    })
+}
+
+function translateCampusSolutionsSchedule(
+    userId: string,
+    body: any
+): NotificationDto {
+    const eventId = 6
+    return new NotificationDto(userId, eventId, null, {
+        title: body.title ?? '',
+        start_at: body.startAt ?? null,
+        end_at: body.endAt ?? null,
+        location: body.location ?? null,
+    })
+}
+
+function translateCampusSolutionsGrade(
+    userId: string,
+    body: any
+): NotificationDto {
+    const eventId = 1
+    return new NotificationDto(userId, eventId, null, {
+        course_id: body.courseId ?? null,
+        grade: body.grade ?? null,
+        term: body.term ?? null,
+    })
 }
 
 @Injectable()

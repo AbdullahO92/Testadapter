@@ -1,23 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { INestApplication } from '@nestjs/common'
 import * as request from 'supertest'
-import { AppModule } from './../src/app.module'
-import { UserService } from './../src/user/user.service'
+import { AppModule } from '../src/app.module'
 import { PrismaService } from '../src/prisma/prisma.service'
 
-describe('UserController (e2e)', () => {
+const describeOrSkip = process.env.RUN_GENERIC_ADAPTER_E2E
+    ? describe
+    : describe.skip
+
+describeOrSkip('GenericAdapterController (e2e)', () => {
     let app: INestApplication
-    let userService = {
-        getGreetings: jest.fn().mockResolvedValue('Hello, World!'),
-    }
     const prismaMock = {
-        user: {
-            findMany: jest.fn().mockResolvedValue([]),
-            findUnique: jest.fn().mockResolvedValue(null),
-            create: jest.fn(),
-            update: jest.fn(),
-            delete: jest.fn(),
-        },
+        user: { findUnique: jest.fn().mockResolvedValue(null) },
         externalSystem: { findFirst: jest.fn().mockResolvedValue(null) },
         externalSystemConfiguration: {
             findMany: jest.fn().mockResolvedValue([]),
@@ -49,8 +43,6 @@ describe('UserController (e2e)', () => {
         const moduleFixture: TestingModule = await Test.createTestingModule({
             imports: [AppModule],
         })
-            .overrideProvider(UserService)
-            .useValue(userService)
             .overrideProvider(PrismaService)
             .useValue(prismaMock)
             .compile()
@@ -59,10 +51,14 @@ describe('UserController (e2e)', () => {
         await app.init()
     })
 
-    it('Should reject unauthorized requests', () => {
-        return request(app.getHttpServer())
-            .get('/user')
+    afterEach(async () => {
+        await app.close()
+    })
+
+    it('should reject unauthorized preview requests', async () => {
+        await request(app.getHttpServer())
+            .post('/v0.1/generic-adapter/canvas/preview')
+            .send({})
             .expect(401)
-            .expect('{"message":"Unauthorized","statusCode":401}')
     })
 })

@@ -27,6 +27,7 @@ describe('UserService', () => {
                 isActive: true,
                 privacyAgreedAt: new Date(),
                 termsAgreedAt: new Date(),
+                instituteId: '00000000-0000-0000-0000-000000000001',
             }
             jest.spyOn(prisma.user, 'create').mockResolvedValue(user)
 
@@ -43,6 +44,7 @@ describe('UserService', () => {
                 isActive: true,
                 privacyAgreedAt: new Date(),
                 termsAgreedAt: new Date(),
+                instituteId: '00000000-0000-0000-0000-000000000001',
             }
             jest.spyOn(prisma.user, 'update').mockResolvedValue(user)
 
@@ -63,6 +65,7 @@ describe('UserService', () => {
                     isActive: true,
                     privacyAgreedAt: new Date(),
                     termsAgreedAt: new Date(),
+                    instituteId: '00000000-0000-0000-0000-000000000001',
                 },
             ]
             jest.spyOn(prisma.user, 'findMany').mockResolvedValue(users)
@@ -82,6 +85,7 @@ describe('UserService', () => {
                 isActive: true,
                 privacyAgreedAt: new Date(),
                 termsAgreedAt: new Date(),
+                instituteId: '00000000-0000-0000-0000-000000000001',
             }
             jest.spyOn(prisma.user, 'findUnique').mockResolvedValue(user)
 
@@ -90,11 +94,7 @@ describe('UserService', () => {
             expect(prisma.user.findUnique).toHaveBeenCalledWith({
                 where: { id: '1' },
                 include: {
-                    userPreference: {
-                        include: {
-                            integrations: true,
-                        },
-                    },
+                    userPreference: { include: {} },
                     externalIdentity: true,
                 },
             })
@@ -108,11 +108,7 @@ describe('UserService', () => {
             expect(prisma.user.findUnique).toHaveBeenCalledWith({
                 where: { id: '1' },
                 include: {
-                    userPreference: {
-                        include: {
-                            integrations: true,
-                        },
-                    },
+                    userPreference: { include: {} },
                     externalIdentity: true,
                 },
             })
