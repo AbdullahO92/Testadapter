@@ -20,7 +20,7 @@ import { PrismaService } from 'src/prisma/prisma.service'
 import { ExternalIdentityTokenRepository } from 'src/externalidentitytoken/externalidentitytoken.repository'
 import { ExternalSystemConfigurationHostHandler } from 'src/entityhandler/externalsystemconfiguration/externalsystemconfigurationhandler.host'
 import { EventService } from 'src/event/event.service'
-import { TranslationService } from 'src/translation/translation.service'
+import { TranslationModule } from 'src/translation/translation.module'
 import { NotificationQueueService } from 'src/event/eventQueue.service'
 import { EventMappingRepository } from 'src/eventmapping/eventmapping.service'
 import { RedisStorageHandler } from 'src/storagehandler/redis/storagehandler.redis'
@@ -31,7 +31,7 @@ import { CanvasNotificationService } from '../notification.canvas.service'
 import { CanvasCronNotificationService } from './notification.canvas.cron.service'
 
 @Module({
-    imports: [],
+    imports: [TranslationModule],
     exports: [CanvasCronNotificationService],
     providers: [
         CanvasCronNotificationService,
@@ -55,7 +55,6 @@ import { CanvasCronNotificationService } from './notification.canvas.cron.servic
         NotificationQueueService,
         ExternalIdentityTokenRepository,
         EventMappingRepository,
-        TranslationService,
         EventService,
         CanvasTokenHandler,
         ConfigService,

@@ -5,14 +5,14 @@ import { ExternalIdentityRepository } from 'src/externalidentity/externalidentit
 import { EventSubscriptionRepository } from 'src/eventsubscription/eventsubscription.repository'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { EventService } from './event.service'
-import { TranslationService } from 'src/translation/translation.service'
+import { TranslationModule } from 'src/translation/translation.module'
+
 import { UserService } from 'src/user/user.service'
 
 @Module({
     providers: [
         EventService,
         UserService,
-        TranslationService,
         PrismaService,
         NotificationQueueService,
         EventMappingRepository,
@@ -20,7 +20,7 @@ import { UserService } from 'src/user/user.service'
         EventSubscriptionRepository,
     ],
     exports: [EventService],
-    imports: [],
+    imports: [TranslationModule],
     controllers: [],
 })
 export class EventModule {}

@@ -6,7 +6,7 @@ import { ScheduleModule } from '@nestjs/schedule'
 
 import { AzureADStrategy } from './authentication/strategies/azuread.strategy'
 import { CanvasModule } from './canvas/canvas.module'
-import { GenericAdapterModule } from './genericadapter/generic-adapter.module'
+import { GenericAdapterModule } from './genericadapter/genericadapter.module'
 import { ConfigModule as KeyValueConfig } from './config/config.module'
 import { EduModule } from './edu/edu.module'
 import { EventMappingModule } from './eventmapping/eventmapping.module'

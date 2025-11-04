@@ -27,7 +27,8 @@ import { ExternalIdentityTokenHandler } from 'src/tokenhandler-new/externalident
 import { ExternalIdentityTokenExpiryHandler } from 'src/tokenhandler-new/externalidentitytokenhandler.expirydate'
 import { ExternalIdentityTokenRefreshExpiryHandler } from 'src/tokenhandler-new/externalidentitytokenhandler.refreshexpirydate'
 import { CanvasTokenHandler } from 'src/tokenhandler/canvas/tokenhandler.canvas'
-import { TranslationService } from 'src/translation/translation.service'
+import { TranslationModule } from 'src/translation/translation.module'
+
 import { UserService } from 'src/user/user.service'
 
 @Module({
@@ -52,7 +53,6 @@ import { UserService } from 'src/user/user.service'
         NotificationQueueService,
         ExternalIdentityTokenRepository,
         EventMappingRepository,
-        TranslationService,
         EventService,
         CanvasTokenHandler,
         ConfigService,
@@ -67,7 +67,7 @@ import { UserService } from 'src/user/user.service'
         PrismaService,
     ],
     exports: [],
-    imports: [],
+    imports: [TranslationModule],
     controllers: [CanvasController],
 })
 export class CanvasModule {}

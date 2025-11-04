@@ -21,7 +21,7 @@ import { PrismaService } from 'src/prisma/prisma.service'
 import { ExternalIdentityTokenRepository } from 'src/externalidentitytoken/externalidentitytoken.repository'
 import { ExternalSystemConfigurationHostHandler } from 'src/entityhandler/externalsystemconfiguration/externalsystemconfigurationhandler.host'
 import { EventService } from 'src/event/event.service'
-import { TranslationService } from 'src/translation/translation.service'
+import { TranslationModule } from 'src/translation/translation.module'
 import { NotificationQueueService } from 'src/event/eventQueue.service'
 import { EventMappingRepository } from 'src/eventmapping/eventmapping.service'
 import { RedisStorageHandler } from 'src/storagehandler/redis/storagehandler.redis'
@@ -30,7 +30,7 @@ import { ExternalIdentityTokenExpiryHandler } from 'src/tokenhandler-new/externa
 import { ExternalIdentityTokenRefreshExpiryHandler } from 'src/tokenhandler-new/externalidentitytokenhandler.refreshexpirydate'
 
 @Module({
-    imports: [],
+    imports: [TranslationModule],
     exports: [CanvasNotificationService],
     providers: [
         CanvasNotificationService,
@@ -53,7 +53,6 @@ import { ExternalIdentityTokenRefreshExpiryHandler } from 'src/tokenhandler-new/
         NotificationQueueService,
         ExternalIdentityTokenRepository,
         EventMappingRepository,
-        TranslationService,
         EventService,
         CanvasTokenHandler,
         ConfigService,

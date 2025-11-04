@@ -40,13 +40,19 @@ export class EventService {
 
         for (const user of users) {
             if (!user.isActive) continue
-            this.queue.sendMessageToQueue(
-                this.translationService.translateBodyToCard(
-                    eventMapping.response,
-                    user,
-                    notification
-                )
+            const translated = this.translationService.translateBodyToCard(
+                eventMapping.response,
+                user,
+                notification
             )
+            if (!translated) {
+                Logger.warn(
+                    `Skipped sending notification because no translator was available for response ${eventMapping.response.internalName}`
+                )
+                continue
+            }
+
+            this.queue.sendMessageToQueue(translated)
         }
     }
 }
