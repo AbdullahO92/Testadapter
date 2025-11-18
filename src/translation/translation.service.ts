@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common'
 import { NotificationDto } from 'src/event/event.dto'
 import { ExternalSystemResponseDto } from 'src/externalsystemresponse/externalsystemresponse.dto'
 import { UserDto } from 'src/user/user.dto'
-import { NotificationTranslatorRegistry } from './providers/notification-translator.registry'
+import { NotificationTranslatorRegistry } from './translators/notification-translator.registry'
 
 @Injectable()
 export class TranslationService {

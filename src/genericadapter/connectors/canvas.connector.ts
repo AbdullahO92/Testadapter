@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { BadRequestException, Injectable } from '@nestjs/common'
 import { ExternalSystemResponseDto } from '../../externalsystemresponse/externalsystemresponse.dto'
 import { GenericAdapterPreviewDto } from '../dto/generic-adapter-preview.dto'
 import { BaseConnector } from './generic-adapter.connector'
@@ -12,6 +12,8 @@ export class CanvasConnector extends BaseConnector {
         response: ExternalSystemResponseDto
     ): Promise<Record<string, any>> {
         const payload = this.getPreviewPayload(preview)
+
+        this.validatePayload(response.internalName, payload)
 
         switch (response.internalName) {
             case 'canvas_announcement':
@@ -60,5 +62,68 @@ export class CanvasConnector extends BaseConnector {
             default:
                 return payload
         }
+    }
+
+    private validatePayload(
+        internalName: string,
+        payload: Record<string, any>
+    ): void {
+        if (!payload || typeof payload !== 'object') {
+            throw new BadRequestException(
+                'Canvas payload must be an object with the expected fields.'
+            )
+        }
+
+        const requirements = this.requiredFields[internalName]
+        if (!requirements) {
+            return
+        }
+
+        const missing = requirements.filter((aliases) =>
+            !aliases.some((field) => this.hasValue(payload[field]))
+        )
+
+        if (missing.length) {
+            const names = missing.map((aliases) => aliases[0]).join(', ')
+            throw new BadRequestException(
+                `Canvas payload is missing required field(s): ${names}.`
+            )
+        }
+    }
+
+    private hasValue(value: unknown): boolean {
+        if (value === null || value === undefined) {
+            return false
+        }
+
+        if (typeof value === 'string') {
+            return value.trim().length > 0
+        }
+
+        return true
+    }
+
+    private readonly requiredFields: Record<string, string[][]> = {
+        canvas_announcement: [
+            ['title', 'announcement_title'],
+            ['message', 'announcement_message'],
+            ['course_id', 'courseId'],
+        ],
+        canvas_grade: [
+            ['assignment_name', 'assignmentName'],
+            ['grade'],
+            ['course_id', 'courseId'],
+        ],
+        canvas_submission_reminder: [
+            ['assignment_name', 'assignmentName'],
+            ['due_at', 'dueAt'],
+            ['course_id', 'courseId'],
+        ],
+        canvas_submission_comment: [
+            ['comment', 'feedback_details'],
+            ['author_name', 'assessor_full_name'],
+            ['course_id', 'courseId'],
+        ],
+        canvas_welcome: [],
     }
 }

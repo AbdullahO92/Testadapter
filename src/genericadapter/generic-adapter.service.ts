@@ -54,23 +54,27 @@ export class GenericAdapterService {
         vendorName: string,
         preview: GenericAdapterPreviewDto
     ): Promise<PreviewResult> {
-        const context = await this.buildPreviewContext(vendorName, preview)
+        try {
+            const context = await this.buildPreviewContext(vendorName, preview)
 
-        await this.storageHandler.set(
-            context.cacheKey,
-            JSON.stringify(context.notification),
-            CACHE_TTL_SECONDS
-        )
+            await this.storageHandler.set(
+                context.cacheKey,
+                JSON.stringify(context.notification),
+                CACHE_TTL_SECONDS
+            )
 
-        this.logger.debug(
-            `Stored preview payload for ${vendorName} in cache key ${context.cacheKey}`
-        )
+            this.logger.debug(
+                `Stored preview payload for ${vendorName} in cache key ${context.cacheKey}`
+            )
 
-        return {
-            cacheKey: context.cacheKey,
-            notification: context.notification,
-            response: context.response,
-            normalizedPayload: context.normalizedPayload,
+            return {
+                cacheKey: context.cacheKey,
+                notification: context.notification,
+                response: context.response,
+                normalizedPayload: context.normalizedPayload,
+            }
+        } catch (error) {
+            this.handleAdapterError('preview', vendorName, error)
         }
     }
 
@@ -101,47 +105,51 @@ export class GenericAdapterService {
         vendorName: string,
         preview: GenericAdapterPreviewDto
     ): Promise<{ cacheKey: string; eventMappingId: string; recipients: number }> {
-        const context = await this.buildPreviewContext(vendorName, preview)
+        try {
+            const context = await this.buildPreviewContext(vendorName, preview)
 
-        await this.storageHandler.set(
-            context.cacheKey,
-            JSON.stringify(context.notification),
-            CACHE_TTL_SECONDS
-        )
-
-        const configuration = await this.resolveConfiguration(
-            context.externalSystem,
-            preview.configurationId
-        )
-
-        const eventMapping = await this.resolveEventMapping(
-            configuration,
-            context.response
-        )
-
-        const externalIdentities =
-            configuration.externalIdentities?.map((identity) => identity.id) ?? []
-
-        if (!externalIdentities.length) {
-            throw new UnauthorizedException(
-                'No external identities found for the selected configuration.'
+            await this.storageHandler.set(
+                context.cacheKey,
+                JSON.stringify(context.notification),
+                CACHE_TTL_SECONDS
             )
-        }
 
-        await this.eventService.sendNotification(
-            externalIdentities,
-            eventMapping.id,
-            context.normalizedPayload
-        )
+            const configuration = await this.resolveConfiguration(
+                context.externalSystem,
+                preview.configurationId
+            )
 
-        this.logger.debug(
-            `Queued notification for vendor ${vendorName} using mapping ${eventMapping.id}`
-        )
+            const eventMapping = await this.resolveEventMapping(
+                configuration,
+                context.response
+            )
 
-        return {
-            cacheKey: context.cacheKey,
-            eventMappingId: eventMapping.id,
-            recipients: externalIdentities.length,
+            const externalIdentities =
+                configuration.externalIdentities?.map((identity) => identity.id) ?? []
+
+            if (!externalIdentities.length) {
+                throw new UnauthorizedException(
+                    'No external identities found for the selected configuration.'
+                )
+            }
+
+            await this.eventService.sendNotification(
+                externalIdentities,
+                eventMapping.id,
+                context.normalizedPayload
+            )
+
+            this.logger.debug(
+                `Queued notification for vendor ${vendorName} using mapping ${eventMapping.id}`
+            )
+
+            return {
+                cacheKey: context.cacheKey,
+                eventMappingId: eventMapping.id,
+                recipients: externalIdentities.length,
+            }
+        } catch (error) {
+            this.handleAdapterError('dispatch', vendorName, error)
         }
     }
 
@@ -290,5 +298,21 @@ export class GenericAdapterService {
         }
 
         return mapping
+    }
+
+    private handleAdapterError(
+        action: 'preview' | 'dispatch',
+        vendorName: string,
+        error: unknown
+    ): never {
+        const normalizedError =
+            error instanceof Error ? error : new Error(String(error))
+
+        this.logger.error(
+            `Failed to ${action} payload for vendor ${vendorName}: ${normalizedError.message}`,
+            normalizedError.stack
+        )
+
+        throw normalizedError
     }
 }

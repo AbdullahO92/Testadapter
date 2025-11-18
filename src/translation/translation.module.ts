@@ -4,9 +4,9 @@ import { TranslationController } from './translation.controller'
 import {
     NOTIFICATION_TRANSLATORS,
     NotificationTranslatorRegistry,
-} from './providers/notification-translator.registry'
-import { CanvasNotificationTranslator } from './providers/canvas-notification.translator'
-import { WelcomeNotificationTranslator } from './providers/welcome-notification.translator'
+} from './translators/notification-translator.registry'
+import { CanvasNotificationTranslator } from './translators/canvas.translator'
+import { WelcomeNotificationTranslator } from './translators/welcome.translator'
 
 const translatorProviders = [
     CanvasNotificationTranslator,

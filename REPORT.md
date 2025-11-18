@@ -33,13 +33,13 @@ The controller now uses API versioning, Azure AD guards, Swagger tags, and a str
 `GenericAdapterPreviewDto` adds Swagger hints and `class-validator` rules for user IDs, response names, configuration IDs, and optional payload fields. Validation blocks invalid payloads early and gives predictable shapes for the service.【F:src/genericadapter/dto/generic-adapter-preview.dto.ts†L1-L54】
 
 ### Step 4 – Build preview and dispatch flows
-The service loads the user and external system, resolves the right response template, and calls the connector to normalize the payload. It translates the payload into a Teams card, stores the preview in Redis for 15 minutes, and can dispatch the message through the event service using configuration and event mapping data. These steps make sure every vendor follows the same workflow from request to notification.【F:src/genericadapter/generic-adapter.service.ts†L1-L195】【F:src/genericadapter/generic-adapter.service.ts†L196-L276】
+The service loads the user and external system, resolves the right response template, and calls the connector to normalize the payload. It translates the payload into a Teams card, stores the preview in Redis for 15 minutes, and can dispatch the message through the event service using configuration and event mapping data. These steps make sure every vendor follows the same workflow from request to notification.【F:src/genericadapter/generic-adapter.service.ts†L53-L154】【F:src/genericadapter/generic-adapter.service.ts†L204-L317】
 
 ### Step 5 – Implement vendor connectors
-Each connector extends a shared base class and focuses on translating vendor-specific fields. Right now only the Canvas connector is active. It converts announcements, grades, and other payloads into the normalized structure the translator expects. This keeps vendor rules separate from the main service and makes new vendors easy to add later.【F:src/genericadapter/connectors/generic-adapter.connector.ts†L1-L38】【F:src/genericadapter/connectors/canvas.connector.ts†L1-L61】
+Each connector extends a shared base class and focuses on translating vendor-specific fields. Right now only the Canvas connector is active. It converts announcements, grades, and other payloads into the normalized structure the translator expects. This keeps vendor rules separate from the main service and makes new vendors easy to add later.【F:src/genericadapter/connectors/generic-adapter.connector.ts†L1-L43】【F:src/genericadapter/connectors/canvas.connector.ts†L1-L128】
 
 ### Step 6 – Split translation logic per vendor
-The translation module now keeps a small registry of translator classes. For now it only exposes the Canvas translator and the shared welcome translator, so the adapter stays focused on Canvas while still matching the pattern we will reuse for more vendors.【F:src/translation/translation.module.ts†L1-L38】【F:src/translation/providers/canvas-notification.translator.ts†L1-L61】
+The translation module now keeps a small registry of translator classes. For now it only exposes the Canvas translator and the shared welcome translator, so the adapter stays focused on Canvas while still matching the pattern we will reuse for more vendors.【F:src/translation/translation.module.ts†L1-L34】【F:src/translation/translators/canvas.translator.ts†L1-L123】
 
 ### Step 7 – Seed shared configuration data
 `prisma/seed.ts` creates fixed IDs for Canvas, its configuration, response templates, and event mappings. Seeding gives developers a ready database so the adapter can run end-to-end without manual setup, matching the project plan request for quick onboarding.【F:prisma/seed.ts†L1-L165】
@@ -61,9 +61,33 @@ The unit test verifies that preview caching, payload translation, and event disp
 3. **Study the translation service**
    - Open `src/translation/translation.service.ts`.
    - Read methods like `translateBodyToCard` and note which helpers they use.
-   - Check how translators in `src/translation/providers/` shape the final Teams cards.
+   - Check how translators in `src/translation/translators/` shape the final Teams cards.
 
 4. **Check Prisma data**
    - Look at `prisma/schema.prisma` to see the `ExternalSystem` model.
    - Open `src/externalsystem/externalsystem.repository.ts` to understand how the data is loaded.
    - Use Prisma Studio (`pnpm prisma studio`) to inspect rows during development.
+
+## 7. Security considerations
+- `.env`, `.env.local`, and `docker-compose.yml` stay in `.gitignore` so secrets do not leak into Git.【F:.gitignore†L38-L46】
+- Canvas API secrets live in environment variables and are only read through `process.env` when the app runs.
+- Ask CY2 for the real values of `CANVAS_API_URL`, `CANVAS_ACCESS_TOKEN`, `CANVAS_CLIENT_ID`, `CANVAS_CLIENT_SECRET`, and `CANVAS_REDIRECT_URI`, then store them locally without committing them.
+
+## 8. Error handling and validation
+- The Canvas connector checks each payload and throws a `BadRequestException` if title, message, course, or other required fields are missing. This keeps bad test data out of the system.【F:src/genericadapter/connectors/canvas.connector.ts†L1-L128】
+- Preview and dispatch now wrap their work in `try/catch` blocks so errors are logged with the vendor name before they bubble up. This makes Canvas failures easier to debug.【F:src/genericadapter/generic-adapter.service.ts†L53-L153】
+
+## 9. Canvas runtime setup
+- Before testing, create a local `.env` file with the Canvas variables listed above.
+- Restart the NestJS app after changing secrets so the new values load.
+
+## 10. Translation architecture
+Just like connectors, translators use the Strategy pattern:
+
+```
+TranslationStrategy → CanvasTranslator
+TranslationRegistry resolves by vendor
+```
+
+- The registry keeps one translator per vendor and returns it when the adapter needs to build a Teams card.【F:src/translation/translators/notification-translator.registry.ts†L1-L20】
+- `CanvasTranslator` holds all Canvas response logic: `canvas_announcement`, `canvas_grade`, `canvas_submission_reminder`, `canvas_submission_comment`, and `canvas_welcome`. Everything stays in one place, just like the Canvas connector.【F:src/translation/translators/canvas.translator.ts†L1-L123】

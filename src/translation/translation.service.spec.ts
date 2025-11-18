@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { TranslationService } from './translation.service'
-import { NotificationTranslatorRegistry } from './providers/notification-translator.registry'
-import { CanvasNotificationTranslator } from './providers/canvas-notification.translator'
-import { WelcomeNotificationTranslator } from './providers/welcome-notification.translator'
-import { NOTIFICATION_TRANSLATORS } from './providers/notification-translator.registry'
+import { NotificationTranslatorRegistry } from './translators/notification-translator.registry'
+import { CanvasNotificationTranslator } from './translators/canvas.translator'
+import { WelcomeNotificationTranslator } from './translators/welcome.translator'
+import { NOTIFICATION_TRANSLATORS } from './translators/notification-translator.registry'
 import { ExternalSystemResponseDto } from 'src/externalsystemresponse/externalsystemresponse.dto'
 import { UserDto } from 'src/user/user.dto'
 
