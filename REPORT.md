@@ -38,8 +38,8 @@ The service loads the user and external system, resolves the right response temp
 ### Step 5 – Implement vendor connectors
 Each connector extends a shared base class and focuses on translating vendor-specific fields. Canvas, Brightspace, Blackboard, and Campus Solutions connectors convert announcements, grades, schedules, and other payloads into the normalized structure the translator expects. This keeps vendor rules separate from the main service and makes new vendors easy to add.【F:src/genericadapter/connectors/generic-adapter.connector.ts†L1-L38】【F:src/genericadapter/connectors/canvas.connector.ts†L1-L45】【F:src/genericadapter/connectors/brightspace.connector.ts†L1-L33】
 
-### Step 6 – Expand translation mappings
-`TranslationService` now understands the new internal response names and builds the notification DTOs for each vendor type. This change lets one translation layer support announcements, grades, reminders, and schedules from every connector.【F:src/translation/translation.service.ts†L1-L86】【F:src/translation/translation.service.ts†L200-L246】
+### Step 6 – Split translation logic per vendor
+The translation module now keeps a small registry of translator classes, one for each vendor and for the generic welcome card. This makes it easy to add or update mappings without touching the shared service, and it mirrors the connector pattern for clarity.【F:src/translation/translation.module.ts†L1-L42】【F:src/translation/providers/canvas-notification.translator.ts†L1-L61】【F:src/translation/providers/brightspace-notification.translator.ts†L1-L36】
 
 ### Step 7 – Seed shared configuration data
 `prisma/seed.ts` creates fixed IDs for the four vendors, their configurations, response templates, and event mappings. Seeding gives developers a ready database so the adapter can run end-to-end without manual setup, matching the project plan request for quick onboarding.【F:prisma/seed.ts†L1-L165】

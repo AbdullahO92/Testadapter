@@ -224,6 +224,12 @@ export class GenericAdapterService {
             normalizedPayload
         )
 
+        if (!notification) {
+            throw new NotFoundException(
+                `No translator found for response "${response.internalName}".`
+            )
+        }
+
         const cacheKey = this.buildCacheKey(user.id, response.internalName)
 
         return {
