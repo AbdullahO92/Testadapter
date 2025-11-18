@@ -11,64 +11,25 @@ async function main() {
 
 const SYSTEM_IDS = {
     canvas: '00000000-0000-0000-0000-000000000001',
-    brightspace: '00000000-0000-0000-0000-000000000010',
-    blackboard: '00000000-0000-0000-0000-000000000011',
-    campusSolutions: '00000000-0000-0000-0000-000000000012',
 } as const
 
 const CONFIGURATION_IDS = {
     canvas: '00000000-0000-0000-0000-000000000001',
-    brightspace: '00000000-0000-0000-0000-000000000010',
-    blackboard: '00000000-0000-0000-0000-000000000011',
-    campusSolutions: '00000000-0000-0000-0000-000000000012',
 } as const
 
 const INSTITUTE_ID = '00000000-0000-0000-0000-000000000001'
 
 async function createExternalSystems() {
-    const created = await Promise.all([
-        prisma.externalSystem.upsert({
-            where: { id: SYSTEM_IDS.canvas },
-            update: {},
-            create: {
-                id: SYSTEM_IDS.canvas,
-                name: 'canvas',
-                minimumVersion: '1',
-            },
-        }),
-        prisma.externalSystem.upsert({
-            where: { id: SYSTEM_IDS.brightspace },
-            update: {},
-            create: {
-                id: SYSTEM_IDS.brightspace,
-                name: 'brightspace',
-                minimumVersion: '1',
-            },
-        }),
-        prisma.externalSystem.upsert({
-            where: { id: SYSTEM_IDS.blackboard },
-            update: {},
-            create: {
-                id: SYSTEM_IDS.blackboard,
-                name: 'blackboard',
-                minimumVersion: '1',
-            },
-        }),
-        prisma.externalSystem.upsert({
-            where: { id: SYSTEM_IDS.campusSolutions },
-            update: {},
-            create: {
-                id: SYSTEM_IDS.campusSolutions,
-                name: 'campus_solutions',
-                minimumVersion: '1',
-            },
-        }),
-    ])
-    console.log(
-        `External systems created:\r\n${created
-            .map((system) => system.name)
-            .join(', ')}`
-    )
+    const created = await prisma.externalSystem.upsert({
+        where: { id: SYSTEM_IDS.canvas },
+        update: {},
+        create: {
+            id: SYSTEM_IDS.canvas,
+            name: 'canvas',
+            minimumVersion: '1',
+        },
+    })
+    console.log(`External systems created:\r\n${created.name}`)
 }
 
 async function createInstitutes() {
@@ -99,68 +60,22 @@ async function createUsers() {
 }
 
 async function createConfigurations() {
-    const configurations = await Promise.all([
-        prisma.externalSystemConfiguration.upsert({
-            where: { id: CONFIGURATION_IDS.canvas },
-            update: {},
-            create: {
-                id: CONFIGURATION_IDS.canvas,
-                externalSystemId: SYSTEM_IDS.canvas,
-                instituteId: INSTITUTE_ID,
-                domain: 'https://canvas.cy2.com/',
-                notificationsEnabled: true,
-                requestsEnabled: true,
-                setupTimestamp: new Date(),
-                lastUpdated: new Date(),
-            },
-        }),
-        prisma.externalSystemConfiguration.upsert({
-            where: { id: CONFIGURATION_IDS.brightspace },
-            update: {},
-            create: {
-                id: CONFIGURATION_IDS.brightspace,
-                externalSystemId: SYSTEM_IDS.brightspace,
-                instituteId: INSTITUTE_ID,
-                domain: 'https://brightspace.cy2.com/',
-                notificationsEnabled: true,
-                requestsEnabled: true,
-                setupTimestamp: new Date(),
-                lastUpdated: new Date(),
-            },
-        }),
-        prisma.externalSystemConfiguration.upsert({
-            where: { id: CONFIGURATION_IDS.blackboard },
-            update: {},
-            create: {
-                id: CONFIGURATION_IDS.blackboard,
-                externalSystemId: SYSTEM_IDS.blackboard,
-                instituteId: INSTITUTE_ID,
-                domain: 'https://blackboard.cy2.com/',
-                notificationsEnabled: true,
-                requestsEnabled: true,
-                setupTimestamp: new Date(),
-                lastUpdated: new Date(),
-            },
-        }),
-        prisma.externalSystemConfiguration.upsert({
-            where: { id: CONFIGURATION_IDS.campusSolutions },
-            update: {},
-            create: {
-                id: CONFIGURATION_IDS.campusSolutions,
-                externalSystemId: SYSTEM_IDS.campusSolutions,
-                instituteId: INSTITUTE_ID,
-                domain: 'https://pscs.cy2.com/',
-                notificationsEnabled: true,
-                requestsEnabled: true,
-                setupTimestamp: new Date(),
-                lastUpdated: new Date(),
-            },
-        }),
-    ])
+    const configuration = await prisma.externalSystemConfiguration.upsert({
+        where: { id: CONFIGURATION_IDS.canvas },
+        update: {},
+        create: {
+            id: CONFIGURATION_IDS.canvas,
+            externalSystemId: SYSTEM_IDS.canvas,
+            instituteId: INSTITUTE_ID,
+            domain: 'https://canvas.cy2.com/',
+            notificationsEnabled: true,
+            requestsEnabled: true,
+            setupTimestamp: new Date(),
+            lastUpdated: new Date(),
+        },
+    })
     console.log(
-        `External system configurations created:\r\n${configurations
-            .map((config) => config.domain)
-            .join(', ')}`
+        `External system configurations created:\r\n${configuration.domain}`
     )
 }
 
@@ -229,84 +144,6 @@ async function createResponses() {
                 'The response that is received from Canvas whenever an assignment submission receives a comment from a user besides the student.',
         },
     })
-    const brightspaceAnnouncement = await prisma.externalSystemResponse.upsert({
-        where: { id: '00000000-0000-0000-0000-000000000010' },
-        update: {},
-        create: {
-            id: '00000000-0000-0000-0000-000000000010',
-            externalSystemId: SYSTEM_IDS.brightspace,
-            internalName: 'brightspace_announcement',
-            displayName: '[Brightspace] Announcement received',
-            description:
-                'Announcement payload received from Brightspace News service.',
-        },
-    })
-
-    const brightspaceGrade = await prisma.externalSystemResponse.upsert({
-        where: { id: '00000000-0000-0000-0000-000000000011' },
-        update: {},
-        create: {
-            id: '00000000-0000-0000-0000-000000000011',
-            externalSystemId: SYSTEM_IDS.brightspace,
-            internalName: 'brightspace_grade',
-            displayName: '[Brightspace] Grade published',
-            description:
-                'Grade notification emitted by Brightspace gradebook updates.',
-        },
-    })
-
-    const blackboardAnnouncement = await prisma.externalSystemResponse.upsert({
-        where: { id: '00000000-0000-0000-0000-000000000012' },
-        update: {},
-        create: {
-            id: '00000000-0000-0000-0000-000000000012',
-            externalSystemId: SYSTEM_IDS.blackboard,
-            internalName: 'blackboard_announcement',
-            displayName: '[Blackboard] Announcement received',
-            description:
-                'Blackboard announcement event forwarded by the adapter.',
-        },
-    })
-
-    const blackboardGrade = await prisma.externalSystemResponse.upsert({
-        where: { id: '00000000-0000-0000-0000-000000000013' },
-        update: {},
-        create: {
-            id: '00000000-0000-0000-0000-000000000013',
-            externalSystemId: SYSTEM_IDS.blackboard,
-            internalName: 'blackboard_grade',
-            displayName: '[Blackboard] Grade published',
-            description:
-                'Blackboard gradebook notification for student grade updates.',
-        },
-    })
-
-    const campusSchedule = await prisma.externalSystemResponse.upsert({
-        where: { id: '00000000-0000-0000-0000-000000000014' },
-        update: {},
-        create: {
-            id: '00000000-0000-0000-0000-000000000014',
-            externalSystemId: SYSTEM_IDS.campusSolutions,
-            internalName: 'campus_solutions_schedule',
-            displayName: '[Campus Solutions] Schedule update',
-            description:
-                'Schedule or timetable update provided by Campus Solutions.',
-        },
-    })
-
-    const campusGrade = await prisma.externalSystemResponse.upsert({
-        where: { id: '00000000-0000-0000-0000-000000000015' },
-        update: {},
-        create: {
-            id: '00000000-0000-0000-0000-000000000015',
-            externalSystemId: SYSTEM_IDS.campusSolutions,
-            internalName: 'campus_solutions_grade',
-            displayName: '[Campus Solutions] Grade published',
-            description:
-                'Grade update synchronized from Campus Solutions transcript data.',
-        },
-    })
-
     console.log(
         `External system responses created:\r\n${[
             grade.displayName,
@@ -314,12 +151,6 @@ async function createResponses() {
             submissionReminder.displayName,
             welcome.displayName,
             submissionComment.displayName,
-            brightspaceAnnouncement.displayName,
-            brightspaceGrade.displayName,
-            blackboardAnnouncement.displayName,
-            blackboardGrade.displayName,
-            campusSchedule.displayName,
-            campusGrade.displayName,
         ].join('\r\n')}`
     )
 }
@@ -409,108 +240,6 @@ async function createEventMappings() {
             isTrigger: true,
         },
     })
-    const brightspaceAnnouncement = await prisma.eventMapping.upsert({
-        where: { id: '00000000-0000-0000-0000-000000000010' },
-        update: {},
-        create: {
-            id: '00000000-0000-0000-0000-000000000010',
-            externalSystemConfigurationId: CONFIGURATION_IDS.brightspace,
-            externalSystemResponseId: '00000000-0000-0000-0000-000000000010',
-            name: '[Brightspace] Announcement received',
-            description:
-                'Adaptive card generated from a Brightspace announcement.',
-            summary: 'New Brightspace announcement available!',
-            isEnabled: true,
-            isDefaultEnabled: true,
-            isTrigger: true,
-        },
-    })
-
-    const brightspaceGrade = await prisma.eventMapping.upsert({
-        where: { id: '00000000-0000-0000-0000-000000000011' },
-        update: {},
-        create: {
-            id: '00000000-0000-0000-0000-000000000011',
-            externalSystemConfigurationId: CONFIGURATION_IDS.brightspace,
-            externalSystemResponseId: '00000000-0000-0000-0000-000000000011',
-            name: '[Brightspace] Grade published',
-            description:
-                'Adaptive card generated from a Brightspace grade update.',
-            summary: 'New Brightspace grade available!',
-            isEnabled: true,
-            isDefaultEnabled: true,
-            isTrigger: true,
-        },
-    })
-
-    const blackboardAnnouncement = await prisma.eventMapping.upsert({
-        where: { id: '00000000-0000-0000-0000-000000000012' },
-        update: {},
-        create: {
-            id: '00000000-0000-0000-0000-000000000012',
-            externalSystemConfigurationId: CONFIGURATION_IDS.blackboard,
-            externalSystemResponseId: '00000000-0000-0000-0000-000000000012',
-            name: '[Blackboard] Announcement received',
-            description:
-                'Adaptive card generated from a Blackboard announcement.',
-            summary: 'New Blackboard announcement available!',
-            isEnabled: true,
-            isDefaultEnabled: true,
-            isTrigger: true,
-        },
-    })
-
-    const blackboardGrade = await prisma.eventMapping.upsert({
-        where: { id: '00000000-0000-0000-0000-000000000013' },
-        update: {},
-        create: {
-            id: '00000000-0000-0000-0000-000000000013',
-            externalSystemConfigurationId: CONFIGURATION_IDS.blackboard,
-            externalSystemResponseId: '00000000-0000-0000-0000-000000000013',
-            name: '[Blackboard] Grade published',
-            description:
-                'Adaptive card generated from a Blackboard grade update.',
-            summary: 'New Blackboard grade available!',
-            isEnabled: true,
-            isDefaultEnabled: true,
-            isTrigger: true,
-        },
-    })
-
-    const campusSchedule = await prisma.eventMapping.upsert({
-        where: { id: '00000000-0000-0000-0000-000000000014' },
-        update: {},
-        create: {
-            id: '00000000-0000-0000-0000-000000000014',
-            externalSystemConfigurationId: CONFIGURATION_IDS.campusSolutions,
-            externalSystemResponseId: '00000000-0000-0000-0000-000000000014',
-            name: '[Campus Solutions] Schedule update',
-            description:
-                'Adaptive card generated from a Campus Solutions schedule update.',
-            summary: 'Your timetable has changed!',
-            isEnabled: true,
-            isDefaultEnabled: true,
-            isTrigger: true,
-        },
-    })
-
-    const campusGrade = await prisma.eventMapping.upsert({
-        where: { id: '00000000-0000-0000-0000-000000000015' },
-        update: {},
-        create: {
-            id: '00000000-0000-0000-0000-000000000015',
-            externalSystemConfigurationId: CONFIGURATION_IDS.campusSolutions,
-            externalSystemResponseId: '00000000-0000-0000-0000-000000000015',
-            name: '[Campus Solutions] Grade published',
-            description:
-                'Adaptive card generated from a Campus Solutions grade update.',
-            summary: 'A new Campus Solutions grade is available!',
-            isEnabled: true,
-            isDefaultEnabled: true,
-            isTrigger: true,
-        },
-    })
-
     console.log(
         `Event mappings created:\r\n${[
             grade.name,
@@ -518,12 +247,6 @@ async function createEventMappings() {
             submissionReminder.name,
             welcome.name,
             submissionComment.name,
-            brightspaceAnnouncement.name,
-            brightspaceGrade.name,
-            blackboardAnnouncement.name,
-            blackboardGrade.name,
-            campusSchedule.name,
-            campusGrade.name,
         ].join('\r\n')}`
     )
 }

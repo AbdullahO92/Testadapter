@@ -2,9 +2,6 @@ import { Test, TestingModule } from '@nestjs/testing'
 import { TranslationService } from './translation.service'
 import { NotificationTranslatorRegistry } from './providers/notification-translator.registry'
 import { CanvasNotificationTranslator } from './providers/canvas-notification.translator'
-import { BrightspaceNotificationTranslator } from './providers/brightspace-notification.translator'
-import { BlackboardNotificationTranslator } from './providers/blackboard-notification.translator'
-import { CampusSolutionsNotificationTranslator } from './providers/campus-solutions-notification.translator'
 import { WelcomeNotificationTranslator } from './providers/welcome-notification.translator'
 import { NOTIFICATION_TRANSLATORS } from './providers/notification-translator.registry'
 import { ExternalSystemResponseDto } from 'src/externalsystemresponse/externalsystemresponse.dto'
@@ -20,24 +17,15 @@ describe('TranslationService', () => {
                 TranslationService,
                 NotificationTranslatorRegistry,
                 CanvasNotificationTranslator,
-                BrightspaceNotificationTranslator,
-                BlackboardNotificationTranslator,
-                CampusSolutionsNotificationTranslator,
                 WelcomeNotificationTranslator,
                 {
                     provide: NOTIFICATION_TRANSLATORS,
                     useFactory: (
                         canvas: CanvasNotificationTranslator,
-                        brightspace: BrightspaceNotificationTranslator,
-                        blackboard: BlackboardNotificationTranslator,
-                        campus: CampusSolutionsNotificationTranslator,
                         welcome: WelcomeNotificationTranslator
-                    ) => [canvas, brightspace, blackboard, campus, welcome],
+                    ) => [canvas, welcome],
                     inject: [
                         CanvasNotificationTranslator,
-                        BrightspaceNotificationTranslator,
-                        BlackboardNotificationTranslator,
-                        CampusSolutionsNotificationTranslator,
                         WelcomeNotificationTranslator,
                     ],
                 },

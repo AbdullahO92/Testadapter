@@ -9,30 +9,14 @@ import { ExternalSystemConfigurationModule } from '../externalsystemconfiguratio
 import { EventModule } from '../event/event.module'
 import { GenericAdapterConnectorRegistry, GENERIC_ADAPTER_CONNECTORS } from './connectors/connector.registry'
 import { CanvasConnector } from './connectors/canvas.connector'
-import { BrightspaceConnector } from './connectors/brightspace.connector'
-import { BlackboardConnector } from './connectors/blackboard.connector'
-import { CampusSolutionsConnector } from './connectors/campus-solutions.connector'
 import { EventMappingRepository } from '../eventmapping/eventmapping.service'
 
 const connectorProviders = [
     CanvasConnector,
-    BrightspaceConnector,
-    BlackboardConnector,
-    CampusSolutionsConnector,
     {
         provide: GENERIC_ADAPTER_CONNECTORS,
-        useFactory: (
-            canvas: CanvasConnector,
-            brightspace: BrightspaceConnector,
-            blackboard: BlackboardConnector,
-            campusSolutions: CampusSolutionsConnector
-        ) => [canvas, brightspace, blackboard, campusSolutions],
-        inject: [
-            CanvasConnector,
-            BrightspaceConnector,
-            BlackboardConnector,
-            CampusSolutionsConnector,
-        ],
+        useFactory: (canvas: CanvasConnector) => [canvas],
+        inject: [CanvasConnector],
     },
 ]
 
