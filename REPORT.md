@@ -41,6 +41,8 @@ Each connector extends a shared base class and focuses on translating vendor-spe
 ### Step 6 – Split translation logic per vendor
 The translation module now keeps a small registry of translator classes. For now it only exposes the Canvas translator and the shared welcome translator, so the adapter stays focused on Canvas while still matching the pattern we will reuse for more vendors.【F:src/translation/translation.module.ts†L1-L34】【F:src/translation/translators/canvas.translator.ts†L1-L123】
 
+> **Note:** `TranslationModule` currently wires notification translators, because the service only builds notification cards. That is why you only see `CanvasNotificationTranslator` and the shared welcome translator in the provider list. When we add Brightspace or Blackboard later we simply drop their translator classes into the same array and the registry will pick them up automatically. No other files need to change.
+
 ### Step 7 – Seed shared configuration data
 `prisma/seed.ts` creates fixed IDs for Canvas, its configuration, response templates, and event mappings. Seeding gives developers a ready database so the adapter can run end-to-end without manual setup, matching the project plan request for quick onboarding.【F:prisma/seed.ts†L1-L165】
 
