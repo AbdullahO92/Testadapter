@@ -1,23 +1,26 @@
 import { Module } from '@nestjs/common'
 import { TranslationService } from './translation.service'
-import { TranslationController } from './translation.controller'
 import {
     NOTIFICATION_TRANSLATORS,
     NotificationTranslatorRegistry,
 } from './translators/notification-translator.registry'
+import { NotificationTranslator } from './translators/notification-translator'
 import { CanvasNotificationTranslator } from './translators/canvas.translator'
 import { WelcomeNotificationTranslator } from './translators/welcome.translator'
 
-const translatorProviders = [
+const translatorClasses = [
     CanvasNotificationTranslator,
     WelcomeNotificationTranslator,
+]
+
+const translatorProviders = [
+    ...translatorClasses,
     {
         provide: NOTIFICATION_TRANSLATORS,
         useFactory: (
-            canvas: CanvasNotificationTranslator,
-            welcome: WelcomeNotificationTranslator
-        ) => [canvas, welcome],
-        inject: [CanvasNotificationTranslator, WelcomeNotificationTranslator],
+            ...translators: NotificationTranslator[]
+        ): NotificationTranslator[] => translators,
+        inject: translatorClasses,
     },
 ]
 

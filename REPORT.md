@@ -90,4 +90,5 @@ TranslationRegistry resolves by vendor
 ```
 
 - The registry keeps one translator per vendor and returns it when the adapter needs to build a Teams card.【F:src/translation/translators/notification-translator.registry.ts†L1-L20】
+- `TranslationModule` registers translators with an array-based provider setup, so adding Brightspace or Blackboard later only requires dropping the new translator class into the list—no other wiring changes.【F:src/translation/translation.module.ts†L1-L27】
 - `CanvasTranslator` holds all Canvas response logic: `canvas_announcement`, `canvas_grade`, `canvas_submission_reminder`, `canvas_submission_comment`, and `canvas_welcome`. Everything stays in one place, just like the Canvas connector.【F:src/translation/translators/canvas.translator.ts†L1-L123】

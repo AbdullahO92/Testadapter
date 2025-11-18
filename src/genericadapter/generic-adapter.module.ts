@@ -9,14 +9,17 @@ import { ExternalSystemConfigurationModule } from '../externalsystemconfiguratio
 import { EventModule } from '../event/event.module'
 import { GenericAdapterConnectorRegistry, GENERIC_ADAPTER_CONNECTORS } from './connectors/connector.registry'
 import { CanvasConnector } from './connectors/canvas.connector'
+import { GenericAdapterConnector } from './connectors/generic-adapter.connector'
 import { EventMappingRepository } from '../eventmapping/eventmapping.service'
 
+const connectorClasses = [CanvasConnector]
+
 const connectorProviders = [
-    CanvasConnector,
+    ...connectorClasses,
     {
         provide: GENERIC_ADAPTER_CONNECTORS,
-        useFactory: (canvas: CanvasConnector) => [canvas],
-        inject: [CanvasConnector],
+        useFactory: (...connectors: GenericAdapterConnector[]) => connectors,
+        inject: connectorClasses,
     },
 ]
 
