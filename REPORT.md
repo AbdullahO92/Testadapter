@@ -4,23 +4,50 @@
 The backend is a NestJS service for the Student Companion App. It gets data from many school systems and sends it to Microsoft Teams. The project uses modules for every big feature. Prisma talks to the database. Redis keeps fast cache data. Azure services give cloud tools.
 
 ## 2. Why we added a generic data adapter
-Many schools use more than one learning system. The old code focused on Canvas. We added a generic adapter to read data from any vendor. The new module should reuse the services that already exist. This keeps the code simple and safe.
+Many schools use more than one learning system. The old code focused on Canvas. We added a generic adapter to read data from any vendor. The new module reuses services that already exist. This keeps the code simple and safe.
 
 ## 3. Where the new files live
-- `src/genericadapter/generic-adapter.module.ts` sets up the NestJS module. It imports external system, translation, and storage modules. It also shares the adapter service with other parts of the app.
-- `src/genericadapter/generic-adapter.service.ts` holds the main logic. It loads vendor data from the database, maps the payload to the Student App format, and saves a preview in Redis cache. It also reads cached previews.
-- `src/genericadapter/generic-adapter.controller.ts` gives HTTP endpoints. One route builds a preview for a vendor. Another route reads a cached preview by key.
-- `src/genericadapter/dto/generic-adapter-preview.dto.ts` defines the request body for previews. It carries the user id, the response template name, and the payload data.
-- `src/app.module.ts` imports `GenericAdapterModule` so the adapter works in the main app.
+- `src/genericadapter/generic-adapter.module.ts` sets up the NestJS module. It imports external system, configuration, translation, storage, and event modules. It also shares the adapter service with other parts of the app.
+- `src/genericadapter/generic-adapter.service.ts` holds the main logic. It loads vendor data from the database, maps the payload to the Student App format, writes the preview to Redis, and can dispatch notifications.
+- `src/genericadapter/generic-adapter.controller.ts` gives HTTP endpoints for preview, cache read, and dispatch actions. Guards keep the routes secure and versioned.
+- `src/genericadapter/dto/generic-adapter-preview.dto.ts` defines and validates the request body for previews and dispatch calls.
+- `src/genericadapter/connectors/*.ts` holds the base class, the registry, and one connector per vendor. Each connector converts vendor data into the shared format.
+- `prisma/seed.ts` seeds the demo vendors, configurations, responses, and mappings so the adapter works in local environments.
+- `src/genericadapter/generic-adapter.service.spec.ts` contains unit tests for preview and dispatch flows.
 
-## 4. Reasons for each step
-1. **Create a module**: NestJS uses modules to group features. Making `GenericAdapterModule` keeps the adapter code together and easy to import.
-2. **Add a service**: Business logic belongs in a service. It can talk to repositories, translators, and storage without mixing with HTTP code.
-3. **Add a controller**: Controllers handle requests. We need a simple API to test the adapter preview and cache.
-4. **Define a DTO**: DTOs describe request data. This makes the preview endpoint easy to use and validate.
-5. **Update AppModule**: The root module must list every feature. Importing `GenericAdapterModule` lets the rest of the app find the adapter service.
+## 4. Reasons for the core structure
+1. **Create a module**: NestJS groups features inside modules. Putting the adapter in `GenericAdapterModule` keeps all parts together and makes import into the main app easy.
+2. **Add a service**: Business rules live in services. The adapter service can work with repositories, translation, cache, and events without mixing with HTTP concerns.
+3. **Add a controller**: We need REST endpoints to preview and send notifications. The controller handles HTTP and forwards safe data to the service.
+4. **Define a DTO**: DTO classes describe and validate request data. This prevents bad payloads from entering the service logic.
+5. **Update AppModule**: The root module must list every feature. Importing the adapter module makes the feature available for the whole backend.
 
-## 5. Next learning steps
+## 5. Detailed steps with justifications
+### Step 1 – Register the module and connectors
+We created `GenericAdapterModule` to import the repositories, translation, cache, and event modules, and to register the connector registry with Canvas, Brightspace, Blackboard, and Campus Solutions implementations. This lets the adapter reuse existing data sources and pick the right connector automatically for each vendor.【F:src/genericadapter/generic-adapter.module.ts†L1-L55】
+
+### Step 2 – Protect and document the controller
+The controller now uses API versioning, Azure AD guards, Swagger tags, and a strict validation pipe. These additions keep the preview, cache, and dispatch endpoints secure and consistent with other modules while giving clear API docs for the company team.【F:src/genericadapter/generic-adapter.controller.ts†L1-L69】
+
+### Step 3 – Validate incoming requests
+`GenericAdapterPreviewDto` adds Swagger hints and `class-validator` rules for user IDs, response names, configuration IDs, and optional payload fields. Validation blocks invalid payloads early and gives predictable shapes for the service.【F:src/genericadapter/dto/generic-adapter-preview.dto.ts†L1-L54】
+
+### Step 4 – Build preview and dispatch flows
+The service loads the user and external system, resolves the right response template, and calls the connector to normalize the payload. It translates the payload into a Teams card, stores the preview in Redis for 15 minutes, and can dispatch the message through the event service using configuration and event mapping data. These steps make sure every vendor follows the same workflow from request to notification.【F:src/genericadapter/generic-adapter.service.ts†L1-L195】【F:src/genericadapter/generic-adapter.service.ts†L196-L276】
+
+### Step 5 – Implement vendor connectors
+Each connector extends a shared base class and focuses on translating vendor-specific fields. Canvas, Brightspace, Blackboard, and Campus Solutions connectors convert announcements, grades, schedules, and other payloads into the normalized structure the translator expects. This keeps vendor rules separate from the main service and makes new vendors easy to add.【F:src/genericadapter/connectors/base.connector.ts†L1-L29】【F:src/genericadapter/connectors/canvas.connector.ts†L1-L45】【F:src/genericadapter/connectors/brightspace.connector.ts†L1-L33】
+
+### Step 6 – Expand translation mappings
+`TranslationService` now understands the new internal response names and builds the notification DTOs for each vendor type. This change lets one translation layer support announcements, grades, reminders, and schedules from every connector.【F:src/translation/translation.service.ts†L1-L86】【F:src/translation/translation.service.ts†L200-L246】
+
+### Step 7 – Seed shared configuration data
+`prisma/seed.ts` creates fixed IDs for the four vendors, their configurations, response templates, and event mappings. Seeding gives developers a ready database so the adapter can run end-to-end without manual setup, matching the project plan request for quick onboarding.【F:prisma/seed.ts†L1-L165】
+
+### Step 8 – Cover the service with tests
+The unit test verifies that preview caching, payload translation, and event dispatch behave correctly when the service talks to mocked dependencies. This safety net helps the team refactor or add vendors without breaking the main flow.【F:src/genericadapter/generic-adapter.service.spec.ts†L1-L123】
+
+## 6. Next learning steps
 1. **Read other modules**
    - Open `src/canvas/` and `src/integration/`.
    - Look at each `*.module.ts`, `*.service.ts`, and `*.controller.ts` file.
@@ -40,4 +67,3 @@ Many schools use more than one learning system. The old code focused on Canvas. 
    - Look at `prisma/schema.prisma` to see the `ExternalSystem` model.
    - Open `src/externalsystem/externalsystem.repository.ts` to understand how the data is loaded.
    - Use Prisma Studio (`pnpm prisma studio`) to inspect rows during development.
-
