@@ -5,14 +5,14 @@ import { ExternalIdentityRepository } from 'src/externalidentity/externalidentit
 import { EventSubscriptionRepository } from 'src/eventsubscription/eventsubscription.repository'
 import { PrismaService } from 'src/prisma/prisma.service'
 import { EventService } from './event.service'
-import { TranslationService } from 'src/translation/translation.service'
+import { TRANSLATION_PROVIDERS } from 'src/translation/translation.providers'
 import { UserService } from 'src/user/user.service'
 
 @Module({
     providers: [
         EventService,
+        ...TRANSLATION_PROVIDERS,
         UserService,
-        TranslationService,
         PrismaService,
         NotificationQueueService,
         EventMappingRepository,

@@ -12,9 +12,11 @@ export class ExternalIdentityHandler extends EntityHandler {
         externalSystemName: string,
         externalSystemConfigurationId: string
     ): Promise<string[] | null> {
-        return await this.getEntities(
+        const identities = await this.getEntities(
             `${externalSystemName}:configurations:${externalSystemConfigurationId}`
         )
+
+        return identities ?? []
     }
 
     public async addIdentity(

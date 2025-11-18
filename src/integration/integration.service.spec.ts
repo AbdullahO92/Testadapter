@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing'
 import { IntegrationService } from './integration.service'
 import { PrismaService } from '../prisma/prisma.service'
-import { DataAdapter } from '@prisma/client'
+import { ExternalSystemConfiguration } from '@prisma/client'
 
 describe('IntegrationService', () => {
     let service: IntegrationService
@@ -9,7 +9,7 @@ describe('IntegrationService', () => {
 
     beforeEach(async () => {
         const mockPrismaService = {
-            integration: {
+            externalSystemConfiguration: {
                 create: jest.fn(),
                 update: jest.fn(),
                 findMany: jest.fn(),
@@ -34,7 +34,7 @@ describe('IntegrationService', () => {
 
     describe('create', () => {
         it('should create a new integration', async () => {
-            const integration: DataAdapter = {
+            const integration: ExternalSystemConfiguration = {
                 id: '00000000-0000-0000-0000-000000000001',
                 instituteId: '00000000-0000-0000-0000-000000000001',
                 domain: 'https://canvas.cy2.com',
@@ -42,20 +42,33 @@ describe('IntegrationService', () => {
                 notificationsEnabled: true,
                 setupTimestamp: new Date(),
                 lastUpdated: new Date(),
-            }
-            jest.spyOn(prismaService.dataAdapter, 'create').mockResolvedValue(
+                externalSystemId: '00000000-0000-0000-0000-000000000001',
+            } as ExternalSystemConfiguration
+            jest
+                .spyOn(
+                    prismaService.externalSystemConfiguration,
+                    'create'
+                )
+                .mockResolvedValue(
                 integration
             )
 
             const result = await service.create(integration)
             expect(result).toEqual(integration)
-            expect(prismaService.dataAdapter.create).toHaveBeenCalledWith({
+            expect(
+                prismaService.externalSystemConfiguration.create
+            ).toHaveBeenCalledWith({
                 data: integration,
             })
         })
 
         it('should throw an error if creation fails', async () => {
-            jest.spyOn(prismaService.dataAdapter, 'create').mockRejectedValue(
+            jest
+                .spyOn(
+                    prismaService.externalSystemConfiguration,
+                    'create'
+                )
+                .mockRejectedValue(
                 new Error('Create error')
             )
 
@@ -68,14 +81,16 @@ describe('IntegrationService', () => {
                     notificationsEnabled: true,
                     setupTimestamp: new Date(),
                     lastUpdated: new Date(),
-                } as DataAdapter)
+                    externalSystemId:
+                        '00000000-0000-0000-0000-000000000001',
+                } as ExternalSystemConfiguration)
             ).rejects.toThrow('Create error')
         })
     })
 
     describe('update', () => {
         it('should update an existing integration', async () => {
-            const integration: DataAdapter = {
+            const integration: ExternalSystemConfiguration = {
                 id: '00000000-0000-0000-0000-000000000001',
                 instituteId: '00000000-0000-0000-0000-000000000001',
                 domain: 'https://canvas.cy2.com',
@@ -83,21 +98,34 @@ describe('IntegrationService', () => {
                 notificationsEnabled: true,
                 setupTimestamp: new Date(),
                 lastUpdated: new Date(),
-            }
-            jest.spyOn(prismaService.dataAdapter, 'update').mockResolvedValue(
+                externalSystemId: '00000000-0000-0000-0000-000000000001',
+            } as ExternalSystemConfiguration
+            jest
+                .spyOn(
+                    prismaService.externalSystemConfiguration,
+                    'update'
+                )
+                .mockResolvedValue(
                 integration
             )
 
             const result = await service.update(integration)
             expect(result).toEqual(integration)
-            expect(prismaService.dataAdapter.update).toHaveBeenCalledWith({
+            expect(
+                prismaService.externalSystemConfiguration.update
+            ).toHaveBeenCalledWith({
                 where: { id: integration.id },
                 data: integration,
             })
         })
 
         it('should throw an error if update fails', async () => {
-            jest.spyOn(prismaService.dataAdapter, 'update').mockRejectedValue(
+            jest
+                .spyOn(
+                    prismaService.externalSystemConfiguration,
+                    'update'
+                )
+                .mockRejectedValue(
                 new Error('Update error')
             )
 
@@ -110,14 +138,16 @@ describe('IntegrationService', () => {
                     notificationsEnabled: true,
                     setupTimestamp: new Date(),
                     lastUpdated: new Date(),
-                } as DataAdapter)
+                    externalSystemId:
+                        '00000000-0000-0000-0000-000000000001',
+                } as ExternalSystemConfiguration)
             ).rejects.toThrow('Update error')
         })
     })
 
     describe('findAll', () => {
         it('should return all integrations', async () => {
-            const integrations: DataAdapter[] = [
+            const integrations: ExternalSystemConfiguration[] = [
                 {
                     id: '00000000-0000-0000-0000-000000000001',
                     instituteId: '00000000-0000-0000-0000-000000000001',
@@ -126,34 +156,53 @@ describe('IntegrationService', () => {
                     notificationsEnabled: true,
                     setupTimestamp: new Date(),
                     lastUpdated: new Date(),
-                },
+                    externalSystemId:
+                        '00000000-0000-0000-0000-000000000001',
+                } as ExternalSystemConfiguration,
             ]
-            jest.spyOn(prismaService.dataAdapter, 'findMany').mockResolvedValue(
+            jest
+                .spyOn(
+                    prismaService.externalSystemConfiguration,
+                    'findMany'
+                )
+                .mockResolvedValue(
                 integrations
             )
 
             const result = await service.findAll()
             expect(result).toEqual(integrations)
-            expect(prismaService.dataAdapter.findMany).toHaveBeenCalledWith({
-                include: { userPreference: true },
-            })
+            expect(
+                prismaService.externalSystemConfiguration.findMany
+            ).toHaveBeenCalledWith({})
         })
     })
 
     describe('delete', () => {
         it('should delete an integration by id', async () => {
-            jest.spyOn(prismaService.dataAdapter, 'delete').mockResolvedValue(
+            jest
+                .spyOn(
+                    prismaService.externalSystemConfiguration,
+                    'delete'
+                )
+                .mockResolvedValue(
                 undefined
             )
 
             await service.delete('1')
-            expect(prismaService.dataAdapter.delete).toHaveBeenCalledWith({
+            expect(
+                prismaService.externalSystemConfiguration.delete
+            ).toHaveBeenCalledWith({
                 where: { id: '1' },
             })
         })
 
         it('should throw an error if deletion fails', async () => {
-            jest.spyOn(prismaService.dataAdapter, 'delete').mockRejectedValue(
+            jest
+                .spyOn(
+                    prismaService.externalSystemConfiguration,
+                    'delete'
+                )
+                .mockRejectedValue(
                 new Error('Delete error')
             )
 

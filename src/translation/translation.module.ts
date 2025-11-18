@@ -1,10 +1,13 @@
 import { Module } from '@nestjs/common'
 import { TranslationService } from './translation.service'
-import { TranslationController } from './translation.controller'
+import {
+    TRANSLATION_EXPORTS,
+    TRANSLATION_PROVIDERS,
+} from './translation.providers'
 
 @Module({
-    providers: [TranslationService],
-    exports: [TranslationService],
+    providers: TRANSLATION_PROVIDERS,
+    exports: TRANSLATION_EXPORTS,
     imports: [],
     controllers: [],
 })

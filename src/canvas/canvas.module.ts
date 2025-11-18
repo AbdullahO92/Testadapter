@@ -27,7 +27,7 @@ import { ExternalIdentityTokenHandler } from 'src/tokenhandler-new/externalident
 import { ExternalIdentityTokenExpiryHandler } from 'src/tokenhandler-new/externalidentitytokenhandler.expirydate'
 import { ExternalIdentityTokenRefreshExpiryHandler } from 'src/tokenhandler-new/externalidentitytokenhandler.refreshexpirydate'
 import { CanvasTokenHandler } from 'src/tokenhandler/canvas/tokenhandler.canvas'
-import { TranslationService } from 'src/translation/translation.service'
+import { TRANSLATION_PROVIDERS } from 'src/translation/translation.providers'
 import { UserService } from 'src/user/user.service'
 
 @Module({
@@ -52,8 +52,8 @@ import { UserService } from 'src/user/user.service'
         NotificationQueueService,
         ExternalIdentityTokenRepository,
         EventMappingRepository,
-        TranslationService,
         EventService,
+        ...TRANSLATION_PROVIDERS,
         CanvasTokenHandler,
         ConfigService,
         {
