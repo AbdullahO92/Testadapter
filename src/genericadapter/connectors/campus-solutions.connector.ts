@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { ExternalSystemResponseDto } from '../../externalsystemresponse/externalsystemresponse.dto'
 import { GenericAdapterPreviewDto } from '../dto/generic-adapter-preview.dto'
-import { BaseConnector } from './base.connector'
+import { BaseConnector } from './generic-adapter.connector'
 
 @Injectable()
 export class CampusSolutionsConnector extends BaseConnector {
