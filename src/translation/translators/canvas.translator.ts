@@ -78,7 +78,11 @@ export class CanvasNotificationTranslator extends BaseNotificationTranslator {
         return new NotificationDto(userId, eventId, null, {
             id: body.id ?? null,
             user_id: userId,
-            assessor_full_name: body.author_name ?? body.assessor_full_name ?? '',
+            assessor_full_name:
+                body.author_name ??
+                body.assessor_full_name ??
+                body.assessor ??
+                '',
             feedback_text: 'Received comment:',
             feedback_details: body.comment ?? body.feedback_details ?? '',
             submission_id: body.submission_id ?? null,
