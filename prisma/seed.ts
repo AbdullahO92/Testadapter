@@ -228,8 +228,7 @@ async function createEventMappings() {
         update: {},
         create: {
             id: '00000000-0000-0000-0000-000000000005',
-            externalSystemConfigurationId:
-                '00000000-0000-0000-0000-000000000001',
+            externalSystemConfigurationId: CONFIGURATION_IDS.canvas,
             externalSystemResponseId: '00000000-0000-0000-0000-000000000005',
             name: '[Canvas] Submission comment',
             description:

@@ -4,7 +4,6 @@ import { ExternalSystemResponseDto } from 'src/externalsystemresponse/externalsy
 import { UserDto } from 'src/user/user.dto'
 import { NotificationTranslatorRegistry } from './translators/translator.registry'
 
-
 @Injectable()
 export class TranslationService {
     private readonly logger = new Logger(TranslationService.name)
@@ -12,20 +11,21 @@ export class TranslationService {
     constructor(
         private readonly translatorRegistry: NotificationTranslatorRegistry
     ) {}
+
     translateBodyToCard(
         response: ExternalSystemResponseDto,
         user: UserDto,
         body: any
     ): NotificationDto | null {
-        const translator = this.translatorRegistry.resolve(response)
+            const translator = this.translatorRegistry.resolve(response)
 
-        if (!translator) {
-            this.logger.warn(
-                `No translator registered for response "${response.internalName}".`
-            )
-            return null
+            if (!translator) {
+                this.logger.warn(
+                    `No translator registered for response "${response.internalName}".`
+                )
+                return null
+            }
+
+            return translator.translate(response, user, body)
         }
-
-        return translator.translate(response, user, body)
     }
-}
