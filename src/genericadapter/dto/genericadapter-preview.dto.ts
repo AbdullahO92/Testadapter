@@ -6,6 +6,7 @@ export class GenericAdapterPreviewDto {
         description: 'Identifier of the SCA user requesting the preview',
         example: 'a63d77ed-1fe7-42b0-8fde-243df9b83b6e',
     })
+    @IsOptional()
     @IsUUID()
     userId: string
 
@@ -13,6 +14,7 @@ export class GenericAdapterPreviewDto {
         description: 'Internal name of the external system response to preview',
         example: 'canvas_announcement',
     })
+    @IsOptional()
     @IsString()
     responseInternalName: string
 

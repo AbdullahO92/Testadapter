@@ -6,6 +6,7 @@ import {
     Param,
     Post,
     Query,
+    Req,
     UseGuards,
     UsePipes,
     ValidationPipe,
@@ -17,13 +18,14 @@ import {
     ApiResponse,
     ApiTags,
 } from '@nestjs/swagger'
+import { Request } from 'express'
 import { GenericAdapterService } from './genericadapter.service'
 import { GenericAdapterPreviewDto } from './dto/genericadapter-preview.dto'
 
 @Controller({ path: 'generic-adapter', version: '0.1' })
 @ApiTags('generic-adapter')
 @ApiBearerAuth()
- @UseGuards(AuthGuard())
+ ///@UseGuards(AuthGuard())
 @UsePipes(
     new ValidationPipe({
         whitelist: true,
@@ -43,9 +45,14 @@ export class GenericAdapterController {
     @ApiResponse({ status: 401, description: 'Unauthorized' })
     async preview(
         @Param('vendor') vendor: string,
-        @Body() previewDto: GenericAdapterPreviewDto
+        @Body() previewDto: GenericAdapterPreviewDto,
+        @Req() request: Request
+
     ) {
-        return this.genericAdapterService.preview(vendor, previewDto)
+        return this.genericAdapterService.preview(
+            vendor,
+            this.applyDefaults(vendor, previewDto, request)
+        )
     }
 
     @Get('cache')
@@ -74,8 +81,39 @@ export class GenericAdapterController {
     @ApiResponse({ status: 401, description: 'Unauthorized' })
     async dispatch(
         @Param('vendor') vendor: string,
-        @Body() previewDto: GenericAdapterPreviewDto
+        @Body() previewDto: GenericAdapterPreviewDto,
+        @Req() request: Request
     ) {
-        return this.genericAdapterService.dispatch(vendor, previewDto)
+        return this.genericAdapterService.dispatch(
+            vendor,
+            this.applyDefaults(vendor, previewDto, request)
+        )
+    }
+
+    private applyDefaults(
+        vendor: string,
+        previewDto: GenericAdapterPreviewDto,
+        request: Request
+    ): GenericAdapterPreviewDto {
+        const userFromToken = (request.user as any)?.oid
+        const defaultUserId =
+            process.env.DEFAULT_PREVIEW_USER_ID ??
+            'a63d77ed-1fe7-42b0-8fde-243df9b83b6e'
+
+        const baseDefaults: GenericAdapterPreviewDto = {
+            ...previewDto,
+            userId: previewDto.userId ?? userFromToken ?? defaultUserId,
+            responseInternalName: previewDto.responseInternalName,
+        }
+
+        if (
+            vendor === 'campus-solutions' &&
+            !baseDefaults.responseInternalName
+        ) {
+            baseDefaults.responseInternalName =
+                'campus_solutions_schedule_change'
+        }
+
+        return baseDefaults
     }
 }

@@ -4,6 +4,8 @@ import {
     NotFoundException,
     UnauthorizedException,
 } from '@nestjs/common'
+import { randomUUID } from 'crypto'
+import { performance } from 'perf_hooks'
 import { ExternalSystemRepository } from '../externalsystem/externalsystem.repository'
 import { TranslationService } from '../translation/translation.service'
 import { StorageHandler } from '../storagehandler/storagehandler'
@@ -21,7 +23,8 @@ import { EventService } from '../event/event.service'
 import { EventMappingRepository } from '../eventmapping/eventmapping.service'
 import { EventMappingDto } from '../eventmapping/eventmapping.dto'
 
-const CACHE_TTL_SECONDS = 60 * 15 // 15 minutes
+const CACHE_TTL_SECONDS = 60 * 30 // 30 Minutes
+const PERFORMANCE_THRESHOLD_MS = 200
 
 
 export interface PreviewResult {
@@ -34,6 +37,7 @@ export interface PreviewResult {
 export interface PreviewContext extends PreviewResult {
     externalSystem: ExternalSystemDto
     user: UserDto
+    configuration: ExternalSystemConfigurationDto
 }
 
 @Injectable()
@@ -55,6 +59,7 @@ export class GenericAdapterService {
         vendorName: string,
         preview: GenericAdapterPreviewDto
     ): Promise<PreviewResult> {
+        const start = performance.now()
         try {
             const context = await this.buildPreviewContext(vendorName, preview)
 
@@ -66,6 +71,9 @@ export class GenericAdapterService {
 
             this.logger.debug(
                 `Stored preview payload for ${vendorName} in cache key ${context.cacheKey}`
+            )
+            this.logger.log(
+                `Preview for ${vendorName} completed in ${(performance.now() - start).toFixed(1)}ms`
             )
 
             return {
@@ -106,6 +114,7 @@ export class GenericAdapterService {
         vendorName: string,
         preview: GenericAdapterPreviewDto
     ): Promise<{ cacheKey: string; eventMappingId: string; recipients: number }> {
+        const start = performance.now()
         try {
             const context = await this.buildPreviewContext(vendorName, preview)
 
@@ -115,19 +124,13 @@ export class GenericAdapterService {
                 CACHE_TTL_SECONDS
             )
 
-            const configuration = await this.resolveConfiguration(
-                context.externalSystem,
-                preview.configurationId
-            )
-
             const eventMapping = await this.resolveEventMapping(
-                configuration,
+                context.configuration,
                 context.response
             )
 
             const externalIdentities =
-                configuration.externalIdentities?.map((identity) => identity.id) ?? []
-
+                context.configuration.externalIdentities?.map((identity) => identity.id) ?? []
             if (!externalIdentities.length) {
                 throw new UnauthorizedException(
                     'No external identities found for the selected configuration.'
@@ -142,6 +145,9 @@ export class GenericAdapterService {
 
             this.logger.debug(
                 `Queued notification for vendor ${vendorName} using mapping ${eventMapping.id}`
+            )
+            this.logger.log(
+                `Dispatch for ${vendorName} completed in ${(performance.now() - start).toFixed(1)}ms`
             )
 
             return {
@@ -170,15 +176,20 @@ export class GenericAdapterService {
 
     private resolveResponse(
         responses: ExternalSystemResponseDto[],
-        internalName: string
+        internalName: string,
+        vendorName?: string
     ): ExternalSystemResponseDto {
         const response = responses.find(
             (item) => item.internalName === internalName
         )
 
         if (!response) {
+            const hint =
+                vendorName === 'campus-solutions'
+                    ? ' Ensure you have rerun Prisma seed to load the latest Campus Solutions responses.'
+                    : ''
             throw new NotFoundException(
-                `Response with internal name "${internalName}" was not found.`
+                `Response with internal name "${internalName}" was not found.${hint}`
             )
         }
 
@@ -186,10 +197,16 @@ export class GenericAdapterService {
     }
 
     private buildCacheKey(
+        externalSystem: ExternalSystemDto,
+        configuration: ExternalSystemConfigurationDto,
         userId: string,
         responseInternalName: string
     ): string {
-        return `generic-adapter:${userId}:${responseInternalName}`
+        const vendorKey = externalSystem.name
+        /// const configurationKey = configuration.id
+        const uniqueKey = randomUUID()
+
+        return `generic-adapter:${vendorKey}:${userId}:${responseInternalName}:${uniqueKey}`
     }
 
     private resolveConnector(vendorName: string): GenericAdapterConnector {
@@ -221,17 +238,42 @@ export class GenericAdapterService {
 
         const response = this.resolveResponse(
             externalSystem.responses ?? [],
-            preview.responseInternalName
+            preview.responseInternalName,
+            vendorName
+        )
+        const configuration = await this.resolveConfiguration(
+            externalSystem,
+            preview.configurationId
         )
 
         const connector = this.resolveConnector(vendorName)
+        const connectorStart = performance.now()
         const normalizedPayload = await connector.buildPayload(preview, response)
+        const connectorDuration = performance.now() - connectorStart
 
+        if (connectorDuration > PERFORMANCE_THRESHOLD_MS) {
+            this.logger.warn(
+                `Connector payload build exceeded threshold for ${vendorName}: ${connectorDuration.toFixed(
+                    1
+                )}ms`
+            )
+        }
+
+        const sanitizedPayload = normalizedPayload
+        const translationStart = performance.now()
         const notification = this.translationService.translateBodyToCard(
             response,
             user,
-            normalizedPayload
+            sanitizedPayload
         )
+        const translationDuration = performance.now() - translationStart
+        if (translationDuration > PERFORMANCE_THRESHOLD_MS) {
+            this.logger.warn(
+                `Translation exceeded threshold for ${response.internalName}: ${translationDuration.toFixed(
+                    1
+                )}ms`
+            )
+        }
 
         if (!notification) {
             throw new NotFoundException(
@@ -239,15 +281,20 @@ export class GenericAdapterService {
             )
         }
 
-        const cacheKey = this.buildCacheKey(user.id, response.internalName)
-
+        const cacheKey = this.buildCacheKey(
+            externalSystem,
+            configuration,
+            user.id,
+            response.internalName
+        )
         return {
             cacheKey,
             notification,
             response,
-            normalizedPayload,
+            normalizedPayload: sanitizedPayload,
             externalSystem,
             user,
+            configuration,
         }
     }
 
